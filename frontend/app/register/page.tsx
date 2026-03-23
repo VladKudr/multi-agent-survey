@@ -115,8 +115,30 @@ export default function RegisterPage() {
       localStorage.setItem("refresh_token", loginResponse.refresh_token);
 
       router.push("/dashboard");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка регистрации");
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      
+      // Show specific error message
+      let errorMessage = "Ошибка регистрации";
+      
+      if (err?.message?.includes("Failed to fetch")) {
+        errorMessage = "Не удалось подключиться к серверу. Убедитесь, что бэкенд запущен.";
+      } else if (err?.message?.includes("Email already registered")) {
+        errorMessage = "Этот email уже зарегистрирован. Используйте другой или войдите.";
+      } else if (typeof err?.message === "string") {
+        errorMessage = err.message;
+      } else if (err?.detail) {
+        errorMessage = String(err.detail);
+      } else {
+        // Try to stringify the error object
+        try {
+          errorMessage = JSON.stringify(err);
+        } catch {
+          errorMessage = "Неизвестная ошибка. Проверьте консоль браузера.";
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -132,6 +154,13 @@ export default function RegisterPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+              <p className="font-medium">Ошибка</p>
+              <p className="text-sm whitespace-pre-wrap">{error}</p>
+            </div>
+          )}
+          
           <Tabs value={`step-${step}`} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger
@@ -289,12 +318,6 @@ export default function RegisterPage() {
                     />
                   </div>
                 </div>
-
-                {error && (
-                  <div className="text-sm text-red-500 bg-red-50 p-3 rounded">
-                    {error}
-                  </div>
-                )}
 
                 <div className="flex gap-2">
                   <Button
