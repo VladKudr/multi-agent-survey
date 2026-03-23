@@ -62,7 +62,7 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     """User response schema."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
 
     id: UUID
     organization_id: UUID
@@ -165,3 +165,7 @@ class PasswordChange(BaseModel):
         if not any(c.isdigit() for c in v):
             raise ValueError("Password must contain at least one digit")
         return v
+
+
+# Rebuild models with forward references
+UserResponse.model_rebuild()

@@ -96,13 +96,13 @@ class LLMConfigUpdate(BaseModel):
 class LLMConfigResponse(LLMConfigBase):
     """LLM config response (without API key)."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
 
     id: UUID
     user_id: UUID
     is_active: bool
     total_requests: int
-    last_used_at: Optional[str] = None
+    last_used_at: Optional[str] = Field(default=None)
     created_at: datetime
     updated_at: datetime
 
