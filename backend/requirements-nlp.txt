@@ -1,0 +1,11 @@
+# Optional NLP dependencies for advanced analytics
+# Install with: pip install -r requirements.txt -r requirements-nlp.txt
+
+# NLP and Analytics (heavy dependencies, install separately if needed)
+spacy==3.7.2
+
+# Note: BERTopic and transformers require torch which is a large dependency
+# bertopic==0.16.0
+# transformers==4.37.0
+# sentence-transformers==2.2.2
+# torch==2.1.0

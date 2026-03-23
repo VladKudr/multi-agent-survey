@@ -27,12 +27,6 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-multipart==0.0.6
 
-# NLP and Analytics
-spacy==3.7.2
-bertopic==0.16.0
-transformers==4.37.0
-sentence-transformers==2.2.2
-
 # YAML Processing
 pyyaml==6.0.1
 

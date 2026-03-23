@@ -1,4 +1,8 @@
-"""NLP service for qualitative response analysis."""
+"""NLP service for qualitative response analysis.
+
+This is a simplified version without heavy dependencies.
+For full functionality, install requirements-nlp.txt
+"""
 
 from typing import Any, List
 
@@ -8,27 +12,41 @@ logger = structlog.get_logger()
 
 
 class NLPService:
-    """Service for NLP operations on qualitative responses."""
+    """Service for NLP operations on qualitative responses.
+    
+    This is a lightweight implementation. For advanced features
+    (BERTopic, transformers), install requirements-nlp.txt
+    """
 
     def __init__(self):
         """Initialize NLP service."""
-        self._bertopic_model = None
-        self._spacy_nlp = None
+        self._bertopic_available = False
+        self._spacy_available = False
+        
+        # Try to import optional dependencies
+        try:
+            import spacy
+            self._spacy_available = True
+            logger.info("spaCy is available")
+        except ImportError:
+            logger.warning("spaCy not installed. Install: pip install spacy")
+        
+        try:
+            from bertopic import BERTopic
+            self._bertopic_available = True
+            logger.info("BERTopic is available")
+        except ImportError:
+            logger.debug("BERTopic not installed. Install: pip install bertopic")
 
     async def extract_themes(
         self, texts: List[str], min_topics: int = 2, max_topics: int = 10
     ) -> List[dict[str, Any]]:
-        """Extract themes from qualitative responses using BERTopic.
-
-        Args:
-            texts: List of response texts
-            min_topics: Minimum number of topics
-            max_topics: Maximum number of topics
-
-        Returns:
-            List of theme dictionaries
+        """Extract themes from qualitative responses.
+        
+        Note: Requires BERTopic to be installed for full functionality.
+        Without BERTopic, returns basic keyword analysis.
         """
-        if len(texts) < min_topics * 3:
+        if not texts or len(texts) < min_topics * 3:
             logger.warning(
                 "insufficient_texts_for_theming",
                 text_count=len(texts),
@@ -36,32 +54,32 @@ class NLPService:
             )
             return []
 
+        # If BERTopic not available, do basic keyword extraction
+        if not self._bertopic_available:
+            logger.info("BERTopic not available, using basic keyword extraction")
+            return self._basic_theme_extraction(texts)
+
         try:
             from bertopic import BERTopic
             from sentence_transformers import SentenceTransformer
 
-            # Lazy load models
-            if self._bertopic_model is None:
-                embedding_model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
-                self._bertopic_model = BERTopic(
-                    embedding_model=embedding_model,
-                    min_topic_size=max(2, len(texts) // max_topics),
-                    nr_topics="auto",
-                )
+            embedding_model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+            topic_model = BERTopic(
+                embedding_model=embedding_model,
+                min_topic_size=max(2, len(texts) // max_topics),
+                nr_topics="auto",
+            )
 
-            # Fit and transform
-            topics, probs = self._bertopic_model.fit_transform(texts)
-
-            # Extract topic info
-            topic_info = self._bertopic_model.get_topic_info()
+            topics, probs = topic_model.fit_transform(texts)
+            topic_info = topic_model.get_topic_info()
 
             themes = []
             for _, row in topic_info.iterrows():
-                if row["Topic"] == -1:  # Skip outlier topic
+                if row["Topic"] == -1:
                     continue
 
                 topic_id = row["Topic"]
-                topic_words = self._bertopic_model.get_topic(topic_id)
+                topic_words = topic_model.get_topic(topic_id)
 
                 themes.append(
                     {
@@ -81,26 +99,72 @@ class NLPService:
 
         except Exception as e:
             logger.error("theme_extraction_failed", error=str(e))
+            return self._basic_theme_extraction(texts)
+
+    def _basic_theme_extraction(self, texts: List[str]) -> List[dict[str, Any]]:
+        """Basic keyword-based theme extraction without heavy dependencies."""
+        from collections import Counter
+        import re
+        
+        # Simple Russian/English keyword extraction
+        stopwords = {
+            "и", "в", "не", "на", "с", "что", "а", "по", "это", "она", 
+            "так", "его", "но", "да", "ты", "к", "у", "же", "вы", "за",
+            "бы", "по", "только", "ее", "мне", "было", "вот", "от",
+            "меня", "еще", "нет", "о", "из", "ему", "теперь", "когда",
+            "даже", "ну", "вдруг", "ли", "если", "уже", "или", "ни",
+            "быть", "был", "него", "до", "вас", "нибудь", "опять",
+            "уж", "вам", "ведь", "там", "потом", "себя", "ничего",
+            "the", "is", "and", "to", "of", "a", "in", "that", "it",
+            "for", "on", "with", "as", "this", "was", "at", "by",
+            "an", "be", "from", "or", "are", "not", "but", "have",
+        }
+        
+        all_words = []
+        for text in texts:
+            # Simple word extraction (Russian and Latin letters)
+            words = re.findall(r'\b[\u0400-\u04FFa-zA-Z]+\b', text.lower())
+            all_words.extend([w for w in words if len(w) > 3 and w not in stopwords])
+        
+        word_counts = Counter(all_words)
+        top_words = word_counts.most_common(20)
+        
+        if not top_words:
             return []
+        
+        # Group into simple "themes" based on top words
+        themes = []
+        for i, (word, count) in enumerate(top_words[:5]):
+            # Find texts containing this word
+            related_texts = [
+                texts[j] for j, text in enumerate(texts)
+                if word in text.lower()
+            ][:3]
+            
+            themes.append({
+                "id": i,
+                "name": word,
+                "count": count,
+                "keywords": [word] + [w for w, _ in top_words if w != word][:4],
+                "representative_texts": related_texts,
+            })
+        
+        return themes
 
     async def extract_entities(self, text: str) -> List[dict[str, str]]:
-        """Extract named entities from text using spaCy.
+        """Extract named entities from text."""
+        if not self._spacy_available:
+            logger.debug("spaCy not available, skipping entity extraction")
+            return []
 
-        Args:
-            text: Input text
-
-        Returns:
-            List of entity dictionaries
-        """
         try:
             import spacy
-
-            # Lazy load spaCy
-            if self._spacy_nlp is None:
+            
+            # Load model if not already loaded
+            if not hasattr(self, '_spacy_nlp'):
                 try:
                     self._spacy_nlp = spacy.load("ru_core_news_md")
                 except OSError:
-                    # Fallback to small model
                     self._spacy_nlp = spacy.load("ru_core_news_sm")
 
             doc = self._spacy_nlp(text)
@@ -123,26 +187,21 @@ class NLPService:
             return []
 
     async def analyze_sentiment(self, text: str) -> dict[str, float]:
-        """Analyze sentiment of text.
-
-        Args:
-            text: Input text
-
-        Returns:
-            Sentiment scores
-        """
+        """Analyze sentiment of text."""
         # Simple rule-based sentiment for Russian
-        # In production, use a proper sentiment model
-
         positive_words = [
             "хороший", "отличный", "прекрасный", "удобный", "эффективный",
             "доволен", "рекомендую", "помогает", "улучшил", "быстро",
             "качественно", "надежный", "выгодно", "экономит", "решил",
+            "good", "great", "excellent", "helpful", "effective", "fast",
+            "reliable", "beneficial", "saves", "solved", "recommend",
         ]
         negative_words = [
             "плохой", "ужасный", "неудобный", "дорого", "медленно",
             "проблема", "ошибка", "не работает", "разочарован", "сложно",
             "недоволен", "не рекомендую", "жаль", "утратил", "потеря",
+            "bad", "terrible", "uncomfortable", "expensive", "slow",
+            "problem", "error", "not working", "disappointed", "difficult",
         ]
 
         text_lower = text.lower()
@@ -165,25 +224,13 @@ class NLPService:
     async def summarize_responses(
         self, texts: List[str], max_length: int = 200
     ) -> str:
-        """Generate summary of multiple responses.
-
-        Args:
-            texts: List of response texts
-            max_length: Maximum summary length
-
-        Returns:
-            Summary text
-        """
+        """Generate summary of multiple responses."""
         if not texts:
             return ""
-
-        # Simple extractive summary: most common phrases
-        # In production, use a proper summarization model
 
         all_text = " ".join(texts)
         sentences = all_text.split(".")
 
-        # Return first few sentences as summary
         summary = ". ".join(sentences[:3]).strip()
         if len(summary) > max_length:
             summary = summary[:max_length] + "..."
