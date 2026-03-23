@@ -68,7 +68,7 @@ async def health_check() -> dict:
 api_v1 = FastAPI(title=f"{settings.APP_NAME} API v1")
 
 # Include routers
-api_v1.include_router(auth.router, prefix="/auth")
+api_v1.include_router(auth.router)  # prefix already set in router
 api_v1.include_router(agents.router, prefix="/agents")
 api_v1.include_router(surveys.router, prefix="/surveys")
 api_v1.include_router(simulations.router, prefix="/simulations")
