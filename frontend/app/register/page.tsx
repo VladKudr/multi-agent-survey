@@ -15,10 +15,41 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authApi, llmConfigApi } from "@/lib/api";
 import type { LLMProviderInfo } from "@/lib/types";
 
+// Default providers if API fails
+const DEFAULT_PROVIDERS: LLMProviderInfo[] = [
+  {
+    id: "kimi",
+    name: "Kimi (Moonshot AI)",
+    description: "Kimi API от Moonshot AI",
+    models: ["kimi-k2-07132k-preview", "kimi-latest", "kimi-k1.5"],
+    default_model: "kimi-k2-07132k-preview",
+    requires_base_url: false,
+    docs_url: "https://platform.moonshot.cn/docs",
+  },
+  {
+    id: "openai",
+    name: "OpenAI",
+    description: "OpenAI GPT модели",
+    models: ["gpt-4", "gpt-4-turbo", "gpt-4o", "gpt-3.5-turbo"],
+    default_model: "gpt-4o",
+    requires_base_url: false,
+    docs_url: "https://platform.openai.com/docs",
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic Claude",
+    description: "Anthropic Claude модели",
+    models: ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
+    default_model: "claude-3-sonnet",
+    requires_base_url: false,
+    docs_url: "https://docs.anthropic.com",
+  },
+];
+
 export default function RegisterPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [providers, setProviders] = useState<LLMProviderInfo[]>([]);
+  const [providers, setProviders] = useState<LLMProviderInfo[]>(DEFAULT_PROVIDERS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -39,9 +70,12 @@ export default function RegisterPage() {
     async function loadProviders() {
       try {
         const data = await llmConfigApi.getProviders();
-        setProviders(data.providers);
+        if (data.providers && data.providers.length > 0) {
+          setProviders(data.providers);
+        }
       } catch (err) {
-        console.error("Failed to load providers:", err);
+        console.warn("Failed to load providers from API, using defaults", err);
+        // Keep default providers
       }
     }
     loadProviders();
@@ -127,6 +161,7 @@ export default function RegisterPage() {
                     className="w-full mt-1 px-3 py-2 border rounded-md"
                     required
                     minLength={2}
+                    placeholder="Иван Иванов"
                   />
                 </div>
                 <div>
@@ -137,6 +172,7 @@ export default function RegisterPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full mt-1 px-3 py-2 border rounded-md"
                     required
+                    placeholder="ivan@example.com"
                   />
                 </div>
                 <div>
@@ -148,9 +184,10 @@ export default function RegisterPage() {
                     className="w-full mt-1 px-3 py-2 border rounded-md"
                     required
                     minLength={8}
+                    placeholder="Минимум 8 символов"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Минимум 8 символов, заглавная буква, строчная буква и цифра
+                    Минимум 8 символов, заглавная, строчная буква и цифра
                   </p>
                 </div>
                 <div>
@@ -162,6 +199,7 @@ export default function RegisterPage() {
                     className="w-full mt-1 px-3 py-2 border rounded-md"
                     required
                     minLength={2}
+                    placeholder="ООО Ромашка"
                   />
                 </div>
                 <Button
@@ -179,7 +217,7 @@ export default function RegisterPage() {
                   <select
                     value={provider}
                     onChange={(e) => setProvider(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border rounded-md"
+                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                   >
                     {providers.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -199,7 +237,7 @@ export default function RegisterPage() {
                   <select
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border rounded-md"
+                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                   >
                     {selectedProvider?.models.map((m) => (
                       <option key={m} value={m}>
@@ -221,7 +259,7 @@ export default function RegisterPage() {
                     placeholder="sk-..."
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Ваш API ключ будет сохранен securely и использоваться для всех LLM запросов
+                    Получите ключ на {selectedProvider?.docs_url}
                   </p>
                 </div>
 
@@ -252,21 +290,10 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {selectedProvider?.docs_url && (
-                  <p className="text-xs text-muted-foreground">
-                    <a
-                      href={selectedProvider.docs_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      Документация провайдера →
-                    </a>
-                  </p>
-                )}
-
                 {error && (
-                  <div className="text-sm text-red-500">{error}</div>
+                  <div className="text-sm text-red-500 bg-red-50 p-3 rounded">
+                    {error}
+                  </div>
                 )}
 
                 <div className="flex gap-2">
