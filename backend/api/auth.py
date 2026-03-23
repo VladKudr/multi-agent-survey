@@ -2,28 +2,29 @@
 
 from datetime import datetime, timedelta
 from typing import Annotated
+from uuid import UUID
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.database import get_db
 from config.settings import get_settings
 from models.user import Organization, User, UserLLMConfig
-from schemas.llm_config import LLMConfigCreate
 from schemas.user import (
     TokenPayload,
     TokenRefresh,
     TokenResponse,
-    UserCreate,
-    UserLogin,
     UserResponse,
 )
 from services.llm_config_service import LLMConfigService
 
+logger = structlog.get_logger()
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # Password hashing
@@ -115,15 +116,12 @@ class UserRegisterRequest(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=100)
     organization_name: str = Field(..., min_length=2, max_length=200)
     
-    # LLM Configuration (optional, will use defaults if not provided)
+    # LLM Configuration
     llm_provider: str = Field(default="kimi")
     llm_model: str = Field(default="kimi-k2-07132k-preview")
     llm_api_key: str = Field(..., min_length=10)
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     llm_max_tokens: int = Field(default=2000, ge=100, le=8000)
-
-
-from pydantic import BaseModel, EmailStr, Field
 
 
 @router.post(
@@ -177,13 +175,12 @@ async def register(
     db.add(user)
     await db.flush()  # Get user ID
     
-    # Create LLM config
-    llm_service = LLMConfigService()
-    
     # Determine base_url
     base_url = None
     if data.llm_provider == "kimi":
         base_url = "https://api.moonshot.cn/v1"
+    elif data.llm_provider == "ollama":
+        base_url = "http://localhost:11434"
     
     llm_config = UserLLMConfig(
         user_id=user.id,
@@ -280,8 +277,6 @@ async def refresh_token(
         )
 
     # Verify user exists
-    from uuid import UUID
-
     result = await db.execute(select(User).where(User.id == UUID(user_id)))
     user = result.scalar_one_or_none()
 
