@@ -125,8 +125,16 @@ export default function RegisterPage() {
         errorMessage = "Не удалось подключиться к серверу. Убедитесь, что бэкенд запущен.";
       } else if (err?.message?.includes("Email already registered")) {
         errorMessage = "Этот email уже зарегистрирован. Используйте другой или войдите.";
-      } else if (typeof err?.message === "string") {
+      } else if (typeof err?.message === "string" && err.message.length > 0) {
+        // APIError.message contains the formatted message
         errorMessage = err.message;
+      } else if (err?.detail && Array.isArray(err.detail)) {
+        // Handle raw FastAPI validation errors
+        const details = err.detail.map((e: any) => {
+          const loc = e.loc?.join('.') || 'field';
+          return `${loc}: ${e.msg}`;
+        }).join('; ');
+        errorMessage = `Ошибка валидации: ${details}`;
       } else if (err?.detail) {
         errorMessage = String(err.detail);
       } else {
@@ -134,7 +142,7 @@ export default function RegisterPage() {
         try {
           errorMessage = JSON.stringify(err);
         } catch {
-          errorMessage = "Неизвестная ошибка. Проверьте консоль браузера.";
+          errorMessage = "Неизвестная ошибка. Проверьте консоль браузера (F12).";
         }
       }
       
