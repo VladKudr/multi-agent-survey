@@ -1,0 +1,29 @@
+agent:
+  id: "manufacturing-ekb-001"
+  legal_type: "ООО"
+  company_name: "УралПромСнаб"
+  industry: "Производство"
+  size: "mid"
+  region: "Екатеринбург"
+  annual_revenue: "500 млн - 1 млрд ₽"
+  decision_maker:
+    role: "Генеральный директор"
+    age: 52
+    gender: "male"
+    education: "Высшее техническое, MBA"
+    mbti: "ESTJ"
+    risk_appetite: "low"
+    communication_style: "formal"
+  pain_points:
+    - "Колебания цен на сырье"
+    - "Логистические сложности на фоне санкций"
+    - "Дефицит квалифицированных инженеров"
+    - "Устаревшее оборудование требует модернизации"
+    - "Бюрократические барьеры в госзакупках"
+  values:
+    - "Долгосрочные партнерские отношения"
+    - "Социальная ответственность перед регионом"
+    - "Импортозамещение"
+    - "Стабильность и предсказуемость"
+  budget_sensitivity: "low"
+  digital_maturity: 3

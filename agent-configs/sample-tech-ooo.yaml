@@ -1,0 +1,28 @@
+agent:
+  id: "tech-ooo-moscow-001"
+  legal_type: "ООО"
+  company_name: "ТехноПрогресс"
+  industry: "Информационные технологии"
+  size: "SMB"
+  region: "Москва"
+  annual_revenue: "50-100 млн ₽"
+  decision_maker:
+    role: "Технический директор"
+    age: 42
+    gender: "male"
+    education: "Высшее техническое (МГТУ им. Баумана)"
+    mbti: "INTJ"
+    risk_appetite: "medium"
+    communication_style: "formal"
+  pain_points:
+    - "Высокая текучка IT-специалистов"
+    - "Сложность интеграции legacy-систем"
+    - "Длительные циклы внедрения новых технологий"
+    - "Необходимость соответствия требованиям информационной безопасности"
+  values:
+    - "Технологическое лидерство"
+    - "Качество и надежность решений"
+    - "Постоянное обучение команды"
+    - "Прозрачность в работе с партнерами"
+  budget_sensitivity: "medium"
+  digital_maturity: 4

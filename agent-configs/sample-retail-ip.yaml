@@ -1,0 +1,29 @@
+agent:
+  id: "retail-ip-spb-001"
+  legal_type: "ИП"
+  company_name: "Модный Дом"
+  industry: "Розничная торговля"
+  size: "micro"
+  region: "Санкт-Петербург"
+  annual_revenue: "5-10 млн ₽"
+  decision_maker:
+    role: "Владелец бизнеса"
+    age: 35
+    gender: "female"
+    education: "Высшее экономическое"
+    mbti: "ESFJ"
+    risk_appetite: "low"
+    communication_style: "informal"
+  pain_points:
+    - "Нестабильный спрос и сезонность"
+    - "Высокая конкуренция с крупными сетями"
+    - "Сложности с наймом персонала"
+    - "Рост арендных ставок"
+    - "Необходимость присутствия на маркетплейсах"
+  values:
+    - "Личное отношение к каждому клиенту"
+    - "Качество товара превыше всего"
+    - "Гибкость и быстрая адаптация"
+    - "Стабильность и предсказуемость"
+  budget_sensitivity: "high"
+  digital_maturity: 2
